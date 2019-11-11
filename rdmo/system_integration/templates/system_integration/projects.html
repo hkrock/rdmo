@@ -1,0 +1,29 @@
+{% extends 'core/page.html' %}
+{% load i18n %}
+{% load core_tags %}
+
+{% block page %}
+
+    <h1>{% trans 'Import data from external system' %}</h1>
+    <p>{% trans 'Choose the data you want to add to your project' %}:</p>
+	<form action="{% url 'system_integration:import' %}" method="post">
+		{% csrf_token %}
+
+		{% for project in projects.projects %}
+			<div class="checkbox">
+				<label>
+				<input type="checkbox" name="project_{{ project.id }}" value="1">
+				{{ project.name }}
+				</label>
+			</div>
+		{% empty %}
+		    {% trans 'Nothing found' %}
+		{% endfor %}
+
+    		<input type="hidden" id="system_id" name="system_id" value="{{ system_id }}" >
+    		<input type="hidden" id="rdmo_project_id" name="rdmo_project_id" value="{{ rdmo_project_id }}" >
+
+    		<input type="submit" name="import" value="{% trans 'Import data' %}" class="btn btn-primary" />
+	</form>
+
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends 'core/page.html' %}
+{% load i18n %}
+{% load core_tags %}
+
+{% block page %}
+
+<h1>{% trans 'Import data from external system' %}</h1>
+<p>{% trans 'Choose a system' %}:</p>
+<ul class="list-unstyled">
+{% for system in systems %}
+    <li><a href="{% url 'system_integration:loginform' rdmo_project_id system.id %}">{{ system.name }}</a></li>
+{% empty %}
+    {% trans 'Nothing found' %}
+{% endfor %}
+</ul>
+
+{% endblock %}
+

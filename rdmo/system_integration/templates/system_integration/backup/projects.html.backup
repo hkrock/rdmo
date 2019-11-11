@@ -1,0 +1,27 @@
+<html>
+<head>
+<title>Showing projects</title>
+</head>
+<body>
+<div>
+	<p>Import data from:</p>
+	<form action="{% url 'system_integration:import' %}" method="post">
+		{% csrf_token %}
+
+		{% for project in projects.projects %}
+			<div class="checkbox">
+				<label>
+				<input type="checkbox" name="project_{{ project.id }}" value="1">
+				{{ project.name }}
+				</label>
+			</div>
+		{% empty %}
+    			Nothing found
+		{% endfor %}
+		</br>
+    		<input type="hidden" id="sys_id" name="sys_id" value="{{ sys_id }}" >
+    		<button type="submit">Import data</button>
+	</form>
+</div>
+</body>
+</html>

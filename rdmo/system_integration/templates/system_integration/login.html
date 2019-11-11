@@ -1,0 +1,29 @@
+{% extends 'core/page.html' %}
+{% load i18n %}
+{% load core_tags %}
+
+{% block page %}
+
+<h1>{% trans 'Import data from external system' %}</h1>
+<h2>{% trans 'Login at' %}  {{ system_name }}</h2>
+{% if error_message == 'invalid_grant' %}
+<p class='text-danger'>{% trans 'Please provide a valid combination of username and password.' %}</p>
+{% endif %}
+<form action="{% url 'system_integration:loginform' %}" method="post">
+  {% csrf_token %}
+    <div class="form-group field-username">
+      <label for="id_username" class="control-label">{% trans 'Username' %}</label>
+      <input id="id_username" name="username" type="text" class="form-control">
+    </div>
+    <div class="form-group field-password">
+      <label for="id_password" class="control-label">{% trans 'Password' %}</label>
+      <input id="id_password" name="password" type="password" class="form-control">
+    </div>
+
+    <input type="hidden" id="system_id" name="system_id" value="{{ system_id }}" >
+    <input type="hidden" id="rdmo_project_id" name="rdmo_project_id" value="{{ rdmo_project_id }}" >
+
+    <input type="submit" name="login" value="{% trans 'Login' %}" class="btn btn-primary" />
+</form>
+
+{% endblock %}
