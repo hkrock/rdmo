@@ -1,2 +1,0 @@
-<h2>Login to Device-DB Dummy</h2>
-<p>You already have a token:</br>{{ token }}</br>Here is the message of the Device DB:</br>{{ message }}</p>
