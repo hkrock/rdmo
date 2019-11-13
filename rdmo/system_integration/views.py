@@ -65,12 +65,16 @@ class LoginView(LoginRequiredMixin, TemplateView):
                 log.info('Json parsing error. Getting information of external system failed.')
                 return render(request, self.error_template, status=400)
 
-            # show login form in case of password authentication
-            if json_response['grant_type'] == 'password':
-                return render(request, 'system_integration/login.html', {'rdmo_project_id':rdmo_project_id, 'system_name':json_response['name'], 'system_id':system_id})
-            # if there is no authentication go directly to project overview of external system
-            elif json_response['grant_type'] == '':
-                return redirect('/system_integration/projects/' + str(rdmo_project_id) + '/' +str(system_id))
+            if 'grant_type' in json_response.keys():
+                # show login form in case of password authentication
+                if json_response['grant_type'] == 'password':
+                    return render(request, 'system_integration/login.html', {'rdmo_project_id':rdmo_project_id, 'system_name':json_response['name'], 'system_id':system_id})
+                # if there is no authentication go directly to project overview of external system
+                elif json_response['grant_type'] == '':
+                    return redirect('/system_integration/projects/' + str(rdmo_project_id) + '/' +str(system_id))
+                else:
+                    log.info('Unsupported authentication method.')
+                    return render(request, self.auth_error_template, status=400)
             else:
                 log.info('Unsupported authentication method.')
                 return render(request, self.auth_error_template, status=400)
