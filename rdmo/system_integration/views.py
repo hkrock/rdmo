@@ -1,12 +1,17 @@
+import json
+import requests
+import logging
+
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import TemplateView
-import json
-import requests
-import logging
-from ..projects.models import Project
+
+from rdmo.projects.models import Project, Value
+
+from .imports import importData, makeSnapshot
+from .models import Catalog2ExternalDatamodel
 
 log = logging.getLogger(__name__)
 
@@ -135,7 +140,9 @@ class LoginView(LoginRequiredMixin, TemplateView):
             return render(request, self.auth_error_template, status=400)
 
 
-class ProjectOverviewView(LoginRequiredMixin, TemplateView):
+class ProjectView(LoginRequiredMixin, TemplateView):
+    model = Project
+    permission_required = 'projects.change_project_object'
     template_name = 'system_integration/login.html'
     error_template = 'system_integration/systems_error.html'
 
@@ -171,13 +178,6 @@ class ProjectOverviewView(LoginRequiredMixin, TemplateView):
             return redirect('/projects/')
 
 
-class ImportProjectdataView(LoginRequiredMixin, TemplateView):
-    model = Project
-    permission_required = 'projects.change_project_object'
-
-    template_name = 'system_integration/login.html'
-    error_template = 'system_integration/systems_error.html'
-
     def post(self, request, *args, **kwargs):
         if 'devicedb_token_'+str(request.POST.get('system_id','')) in request.session and request.POST.get('system_id', ''):
             token = request.session['devicedb_token_'+str(request.POST.get('system_id',''))]
@@ -203,8 +203,20 @@ class ImportProjectdataView(LoginRequiredMixin, TemplateView):
                 # The response of the external system is sent back to the mediator, then processed by the mediator and then the processed data is sent back to the rdmo.
                 projects_json = json.dumps(projects)
                 link = mediator_url + ':' + str(mediator_port) + mediator_app_name + mediator_projectdata + '/'
+
                 try:
-                    r = requests.get(link, params = {'devicedb_token':token, 'sys_id':request.POST.get('system_id',''), 'projects':projects_json})
+                    projectObject = Project.objects.get(pk=request.POST.get('rdmo_project_id',''))
+                except Project.DoesNotExist:
+                    log.info('Project %s not in db.', request.POST.get('rdmo_project_id',''))
+                    return render(request, self.error_template, status=400)
+
+                try:
+                    target = Catalog2ExternalDatamodel.objects.get(catalog=projectObject.catalog).datamodel
+                except:
+                    target = ''
+
+                try:
+                    r = requests.get(link, params = {'devicedb_token':token, 'sys_id':request.POST.get('system_id',''), 'projects':projects_json, 'target_model_id':target})
                 except:
                     log.info('Connection error. Getting project data from external system failed.')
                     return render(request, self.error_template, status=400)
@@ -214,8 +226,17 @@ class ImportProjectdataView(LoginRequiredMixin, TemplateView):
                     log.info('Json parsing error. Getting project data of external system failed.')
                     return render(request, self.error_template, status=400)
 
+                # !!! at first be sure you make a snapshot !!!
+                makeSnapshot(projectObject)
+
                 # !!! import should start here !!!
-                # !!! at first be sure you made some snapshots !!!
-                return HttpResponse('Data requested for projects (IDs): '+projects_json+'</br>Data: '+str(json_response))
+                answer = 'Projekte:<br>'
+                if isinstance(json_response, list):
+                    for project in json_response:
+                        answer += '<br>!!!'+str(projectObject.pk)+'!!!<br>'+str(project)
+                        importData(projectObject, project)
+
+                return redirect('/projects/' + request.POST.get('rdmo_project_id',''))
+                #return HttpResponse('Data requested for projects (IDs): '+projects_json+'</br>Data: '+str(json_response)+answer)
             else:
                 return redirect('/system_integration/projects/' + request.POST.get('rdmo_project_id','') + '/' + request.POST.get('system_id',''))

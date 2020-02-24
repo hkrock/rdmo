@@ -11,8 +11,8 @@
 
 		{% for project in projects.projects %}
 			<div class="checkbox">
-				<label>
-				<input type="checkbox" name="project_{{ project.id }}" value="1">
+				<input type="radio" id="project_{{ project.id }}" name="project_{{ project.id }}" value="1">
+				<label for="project_{{ project.id }}">
 				{{ project.name }}
 				</label>
 			</div>
